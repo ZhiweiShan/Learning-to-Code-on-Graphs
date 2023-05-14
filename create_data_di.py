@@ -53,7 +53,7 @@ def write_edgelist(G, path, delimiter=" ", data=True, encoding="utf-8"):
 if __name__ == "__main__":
     # set the graph type you want to generate and the corresponding parameters
     graph_type = 'random_bigraph'
-    num_graph = 100
+    num_graph = 1000
     #random ER bipartite
     num_nodes_left_er = 20
     num_nodes_right_er = 20
@@ -81,7 +81,7 @@ if __name__ == "__main__":
 
     print(graph_type)
     if graph_type == 'random_bigraph':
-        base_data_dir = os.path.join('data/data_di_bipar_{}{}{}{}_{}_test'
+        base_data_dir = os.path.join('data/data_di_bipar_{}{}{}{}_{}_train'
                                  .format(num_nodes_left_er, num_nodes_right_er, p_bi, q_bi, num_graph))
     elif graph_type == 'random_bipartite_HH':
         base_data_dir = os.path.join('../data/data_di_biparHH_{}{}{}{}_{}'
