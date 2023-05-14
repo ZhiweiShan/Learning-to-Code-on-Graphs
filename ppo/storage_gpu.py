@@ -93,12 +93,6 @@ class RolloutStorage(object):
         reward, 
         done
         ):
-        # ob_ = ob.cpu()
-        # action_ = action.cpu()
-        # action_log_prob_ = action_log_prob.cpu()
-        # value_pred_ = value_pred.cpu()
-        # reward_ = reward.cpu()
-        # done_ = done.cpu()
 
         ob_ = ob
         action_ = action

@@ -1,15 +1,9 @@
 import torch
 import dgl
-from collections import namedtuple
 import dgl.function as fn
-import networkx as nx
 import numpy as np
-from copy import deepcopy as dc
-import random
 from numpy.linalg import matrix_rank as rk
-import time
-from time import time
-from torch.utils.data import DataLoader
+
 
 class MaximumIndependentSetEnv(object):
     def __init__(
@@ -40,15 +34,13 @@ class MaximumIndependentSetEnv(object):
 
         return ob, reward, done, info, max_num_in_color
 
-        # 定义消息函数
 
     def send_source(self,edges):
         return {'m': edges.src['h']}
 
-        # aggregation function
 
     def count_rank(self,nodes):
-        def rk(mailbox):  # 数in_color个数
+        def rk(mailbox):
             T = np.array(mailbox.permute(0,2,1,3).cpu())
             rank = torch.tensor(np.linalg.matrix_rank(T)).to(self.device)
             return rank
@@ -56,8 +48,8 @@ class MaximumIndependentSetEnv(object):
         return {'h': rk(nodes.mailbox['m'])}
 
     def cat(self,nodes):
-        def rk(mailbox):  # 数in_color个数
-            T = mailbox#.permute(0,2,1,3)
+        def rk(mailbox):
+            T = mailbox
             T = T.reshape([T.size()[0],1,T.size()[2],-1])
             return T
 
@@ -65,15 +57,15 @@ class MaximumIndependentSetEnv(object):
 
     def _take_action(self, action):
 
-        undecided = self.x == 0 #找到defered 索引
-        self.x[undecided] = action[undecided] #将defered node更新
+        undecided = self.x == 0
+        self.x[undecided] = action[undecided]
         self.t += 1
 
         # Clean:
         x1 = self.vecs[self.x]
 
         self.g = self.g.to(self.device)
-        self.g.ndata['h'] = x1.float() #False -> 0, True -> 1
+        self.g.ndata['h'] = x1.float()
         self.g.update_all(
             self.send_source,
             self.count_rank
@@ -81,7 +73,7 @@ class MaximumIndependentSetEnv(object):
         rk_N = self.g.ndata.pop('h')
 
 
-        self.g_selfloop.ndata['h'] = x1.float() #False -> 0, True -> 1
+        self.g_selfloop.ndata['h'] = x1.float()
         self.g_selfloop.update_all(
             self.send_source,
             self.count_rank
@@ -92,11 +84,10 @@ class MaximumIndependentSetEnv(object):
         clash1 = rk_N == self.space_dim
         x0 = torch.count_nonzero(x1, dim=2) == 0
         clash2 = rk_N == rk_NS
-        # 找出冲突的点
         clashed = clash1 | (clash2 & ~x0)
 
         self.rg.ndata['h'] = clashed.float()
-        self.rg.update_all(  # 逆向传播
+        self.rg.update_all(
             fn.copy_src(src='h', out='m'),
             fn.sum(msg='m', out='h')
         )
@@ -109,7 +100,7 @@ class MaximumIndependentSetEnv(object):
         # fill timeout with zeros
         still_undecided = (self.x == 0)
         timeout = (self.t == self.max_epi_t)
-        self.x[still_undecided & timeout] = self.num_color+1  #超时的多加一个颜色
+        self.x[still_undecided & timeout] = self.num_color+1
 
         done = self._check_done()
         self.epi_t[~done] += 1
@@ -117,7 +108,7 @@ class MaximumIndependentSetEnv(object):
         # compute reward and solution
         x_not_0 = (self.x != 0 ).float()
         x_not_new_color = (self.x != self.num_color+1).float()
-        x_colored = (x_not_0 + x_not_new_color == 2).float() #即不是0，也不是新color时给一个reward
+        x_colored = (x_not_0 + x_not_new_color == 2).float()
         #x_colored = x_not_0
         h = x_colored
         self.g.ndata['h'] = h
@@ -164,13 +155,13 @@ class MaximumIndependentSetEnv(object):
         num_nodes = self.g.number_of_nodes()
         self.x = torch.full(
             (num_nodes, num_samples),
-            0,  #原为2
+            0,
             dtype = torch.long, 
             device = self.device
             )
         self.x_vector = torch.full(
             (num_nodes, self.space_dim, num_samples),
-            0,  #原为2
+            0,
             dtype = torch.long,
             device = self.device
             )
@@ -204,11 +195,4 @@ class MaximumIndependentSetEnv(object):
             vec = torch.tensor([int(b) for b in bin_str])
             self.vecs[i] = vec
 
-        # self.matrix= np.diag([1]*self.space_dim)
-        # for _ in range(self.num_color-self.space_dim):
-        #     index = random.sample(range(self.matrix.shape[0]),2)
-        #     alpha = random.random()
-        #     beta = 1-alpha
-        #     new_vector = alpha*self.matrix[index[0]] + beta*self.matrix[index[1]]
-        #     self.matrix = np.vstack((self.matrix,new_vector))
         return ob

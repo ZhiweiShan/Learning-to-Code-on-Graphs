@@ -21,16 +21,15 @@ class ActorCritic(nn.Module):
         self.num_color = num_color
         self.output_dim = num_color + 1
         self.actor_net = actor_class(2 * num_color + 2, hidden_dim, self.output_dim,
-                                     num_layers)  # (2, hidden_dim, 3, num_layers)
+                                     num_layers)
         self.critic_net = critic_class(2 * num_color + 2, hidden_dim, 1, num_layers)
         self.device = device
         self = self.to(device)
         self.max_num_nodes = max_num_nodes
 
     def get_masks_idxs_subg_h(self, ob, g):
-        #   mask the deffered nodes
-        # num_nodes x batch_size
-        node_mask = (ob.select(2, 0).long() == 0)  # defered node -> node_mask=True #was == 2 #node_mask = (ob.select(2, 0).long() == 0)
+
+        node_mask = (ob.select(2, 0).long() == 0)
         flatten_node_idxs = node_mask.reshape(-1).nonzero().squeeze(1)
 
         # num_subg_nodes
@@ -57,8 +56,7 @@ class ActorCritic(nn.Module):
     def act(self, ob, g):
 
         num_nodes, batch_size = ob.size(0), ob.size(1)
-        #        g = g.reverse(share_ndata=True, share_edata=True).to(self.device)#将边改为反向
-        #        g = dgl.DGLGraph(nx.DiGraph(nx.Graph(g.to_networkx())))  # 将边改为双向
+
         masks, idxs, subg, h = self.get_masks_idxs_subg_h(ob, g)
         node_mask, subg_mask, subg_node_mask = masks
         flatten_node_idxs, flatten_subg_idxs, flatten_subg_node_idxs = idxs
@@ -70,7 +68,7 @@ class ActorCritic(nn.Module):
                 subg,
                 mask=subg_node_mask
             )
-                .view(-1, self.output_dim)  # 改
+                .view(-1, self.output_dim)
                 .index_select(0, flatten_subg_node_idxs)
         )
 
@@ -90,8 +88,7 @@ class ActorCritic(nn.Module):
 
     def act_and_crit(self, ob, g):
         num_nodes, batch_size = ob.size(0), ob.size(1)
-        #        g = g.reverse(share_ndata=True, share_edata=True).to(self.device)#将边改为反向
-        #        g = dgl.DGLGraph(nx.DiGraph(nx.Graph(g.to_networkx())))  # 将边改为双向
+
         masks, idxs, subg, h = self.get_masks_idxs_subg_h(ob, g)
         node_mask, subg_mask, subg_node_mask = masks
         flatten_node_idxs, flatten_subg_idxs, flatten_subg_node_idxs = idxs
@@ -103,10 +100,10 @@ class ActorCritic(nn.Module):
                 subg,
                 mask=subg_node_mask
             )
-                .view(-1, self.output_dim)  # 改
+                .view(-1, self.output_dim)
                 .index_select(0, flatten_subg_node_idxs)
         )
-        #print(logits)
+
 
         m = Categorical(logits=logits)
         # get actions
@@ -115,7 +112,7 @@ class ActorCritic(nn.Module):
             dtype=torch.long,
             device=self.device
         )
-        action[flatten_node_idxs] = m.sample()  # 确定(sample) action
+        action[flatten_node_idxs] = m.sample()
 
         # compute log probability of actions per node
         action_log_probs = torch.zeros(
@@ -169,7 +166,6 @@ class ActorCritic(nn.Module):
                 .index_select(0, flatten_subg_node_idxs)
         )
 
-        #print('ob',(ob.select(2, 0).long() == 0).float().max())
 
 
         m = Categorical(logits=logits)
@@ -216,24 +212,24 @@ class ActorCritic(nn.Module):
         return action_log_probs, avg_entropy, value_preds, node_mask
 
     def _build_h(self, ob, g):
-        ob_t = ob.select(2, 1).unsqueeze(2)  # 第2维取1列 (5,10,1)
+        ob_t = ob.select(2, 1).unsqueeze(2)
         ob_x = ob.select(2, 0)
         onehot = nn.functional.one_hot(ob_x.to(torch.int64), num_classes=self.num_color + 1).to(torch.float32)
-        g.ndata['h'] = onehot[:, :, 1:]  # 将0的one hot删除
+        g.ndata['h'] = onehot[:, :, 1:]
         g.update_all(
             fn.copy_src(src='h', out='m'),
             fn.sum(msg='m', out='h')
         )
-        # 通过消息传递求degree
-        neighbor_color = g.ndata.pop('h')  # 将ndata存进x1_deg并删除'h'
-        # 反向传播
+
+        neighbor_color = g.ndata.pop('h')
+
         rg = g.reverse(copy_ndata=True, copy_edata=True).to(self.device)
-        rg.ndata['h'] = onehot[:, :, 1:]  # 将0的one hot删除
+        rg.ndata['h'] = onehot[:, :, 1:]
         rg.update_all(
             fn.copy_src(src='h', out='m'),
             fn.sum(msg='m', out='h')
         )
-        # 通过消息传递求degree
-        neighbor_color_reverse = rg.ndata.pop('h')  # 将ndata存进x1_deg并删除'h'
+
+        neighbor_color_reverse = rg.ndata.pop('h')
 
         return torch.cat([ob_t, neighbor_color, neighbor_color_reverse, torch.ones_like(ob_t)], dim=2)

@@ -1,14 +1,8 @@
 import torch
 import dgl
-from collections import namedtuple
 import dgl.function as fn
-import networkx as nx
 import numpy as np
-from copy import deepcopy as dc
-import random
-import time
-from time import time
-from torch.utils.data import DataLoader
+
 
 class MaximumIndependentSetEnv(object):
     def __init__(
@@ -28,7 +22,6 @@ class MaximumIndependentSetEnv(object):
         self.clean2 = clean2
         
     def step(self, action):
-        #print(action)
         reward, sol, done, max_num_in_color = self._take_action(action)
         
         ob = self._build_ob()
@@ -37,15 +30,15 @@ class MaximumIndependentSetEnv(object):
 
         return ob, reward, done, info, max_num_in_color
 
-        # 定义消息函数
+
 
     def send_source(self,edges):
         return {'m': edges.src['h']}
 
-        # aggregation function
+
 
     def count_reduce(self,nodes):
-        def count_color(mailbox):  # 数in_color个数
+        def count_color(mailbox):
             color_count = torch.ones((mailbox.shape[0], 1, mailbox.shape[2]), dtype=int).to(self.device)
             if (mailbox.shape[1] >= self.num_color - self.clean2 and mailbox.shape[1] != 1):
                 T = np.array(mailbox.cpu())
@@ -56,65 +49,62 @@ class MaximumIndependentSetEnv(object):
         return {'c': count_color(nodes.mailbox['m'])}
 
     def _take_action(self, action):
-        # print('x',self.x)
-        # print('action',action)
-        undecided = self.x == 0 #找到defered 索引
-        self.x[undecided] = action[undecided] #将defered node更新
+
+        undecided = self.x == 0
+        self.x[undecided] = action[undecided]
         self.t += 1
         rg = self.g.reverse(copy_ndata=True, copy_edata=True).to(self.device)
         # Clean 1:
-        for i in range(1,self.num_color+1):  #对每一种color：
-            x1 = (self.x == i) #标记是否为该种颜色 (True or False)
-
+        for i in range(1,self.num_color+1):
+            x1 = (self.x == i)
             self.g = self.g.to(self.device)
-            self.g.ndata['h'] = x1.float() #False -> 0, True -> 1
+            self.g.ndata['h'] = x1.float()
             self.g.update_all(
                 fn.copy_src(src='h', out='m'),
                 fn.sum(msg='m', out='h')
                 )
-            #通过消息传递求degree
-            x1_deg = self.g.ndata.pop('h')#将ndata存进x1_deg并删除'h'
 
-            # 找出冲突的点
+            x1_deg = self.g.ndata.pop('h')
+
             clashed = x1 & (x1_deg > 0)
 
-            # 反向图
-            rg.ndata['h'] = clashed.float()  # False -> 0, True -> 1
-            rg.update_all(  # 逆向传播
+
+            rg.ndata['h'] = clashed.float()
+            rg.update_all(
                 fn.copy_src(src='h', out='m'),
                 fn.sum(msg='m', out='h')
             )
             x_clashed_deg = rg.ndata.pop('h')
             clashed_2 = x1 & (x_clashed_deg > 0)
 
-            self.x[clashed] = 0 #将冲突的node打回0
+            self.x[clashed] = 0
             self.x[clashed_2] = 0
 
-        #已完成clean1，下面clean2
+        # clean1 finished，next clean2
         if self.t[0][0] < self.max_epi_t*self.local_give_up_coef:
             self.g.ndata['h'] = self.x
             self.g.update_all(
                 self.send_source,
                 self.count_reduce
                 )
-            #将int转为float否则无法求max
+
             num_in_color = self.g.ndata.pop('c').float()
-            x_reach_C = (num_in_color >= self.num_color-self.clean2 ) # 找出#in-color=C-1的点
+            x_reach_C = (num_in_color >= self.num_color-self.clean2 )
             rg.ndata['h'] = x_reach_C.float()
-            rg.update_all(  # 逆向传播
+            rg.update_all(
                 fn.copy_src(src='h', out='m'),
                 fn.sum(msg='m', out='h')
             )
             reach_C_neighbor = rg.ndata.pop('h')
             reach_C_set = x_reach_C | (reach_C_neighbor > 0)
 
-            self.x[reach_C_set] = 0 #将#in-color=C-1的点及它的in-neighbors打回0
+            self.x[reach_C_set] = 0
 
 
         # fill timeout with zeros
         still_undecided = (self.x == 0)
         timeout = (self.t == self.max_epi_t)
-        self.x[still_undecided & timeout] = self.num_color+1  #超时的多加一个颜色
+        self.x[still_undecided & timeout] = self.num_color+1
 
         done = self._check_done()
         self.epi_t[~done] += 1
@@ -122,8 +112,8 @@ class MaximumIndependentSetEnv(object):
         # compute reward and solution
         x_not_0 = (self.x != 0 ).float()
         x_not_new_color = (self.x != self.num_color+1).float()
-        x_colored = (x_not_0 + x_not_new_color == 2).float() #即不是0，也不是新color时给一个reward
-        #x_colored = x_not_0
+        x_colored = (x_not_0 + x_not_new_color == 2).float()
+
         h = x_colored
         self.g.ndata['h'] = h
         next_sol = dgl.sum_nodes(self.g, 'h')
@@ -140,12 +130,11 @@ class MaximumIndependentSetEnv(object):
                 self.send_source,
                 self.count_reduce
                 )
-            #将int转为float否则无法求max
             num_in_color = self.g.ndata.pop('c').float()
             self.g.ndata['h'] = num_in_color
             max_num_in_color = dgl.max_nodes(self.g, 'h')
             self.g.ndata.pop('h')
-            # print(max_num_in_color)
+
 
         reward /= self.max_num_nodes
         reward[done & (self.already_done == 0)] += (self.max_epi_t - self.t[0][0]).float() / self.max_epi_t
@@ -181,7 +170,7 @@ class MaximumIndependentSetEnv(object):
         num_nodes = self.g.number_of_nodes()
         self.x = torch.full(
             (num_nodes, num_samples),
-            0,  #原为2
+            0,
             dtype = torch.long, 
             device = self.device
             )

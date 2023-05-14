@@ -17,8 +17,7 @@ import time
 def envaluate_RL(data_dir,num_color,max_num_nodes, device, training_device, base_model_save_dir):
     device = torch.device(device)
     training_device = torch.device(training_device)
-    #15150.30.3  20200.250.25  25250.20.2   30300.150.15  30300202  biparHH_202070.2
-    #
+
 
     print('model:',base_model_save_dir)
     # env
@@ -71,14 +70,10 @@ def envaluate_RL(data_dir,num_color,max_num_nodes, device, training_device, base
     )
     model_save_dir = os.path.join(base_model_save_dir, str(num_color))
     model_path = os.path.join(model_save_dir, "saved_model")
-    # if training_device == device:
-    #     actor_critic.load_state_dict(torch.load(model_path))
-    # else:
+
     actor_critic.load_state_dict(torch.load(model_path, map_location={'{}'.format(training_device):'{}'.format(device)}))
     actor_critic.to(device)
-    # construct PPO framework
 
-    # construct environment
 
     env = env_color.MaximumIndependentSetEnv(
         max_epi_t=max_epi_t,
@@ -124,9 +119,8 @@ def envaluate_RL(data_dir,num_color,max_num_nodes, device, training_device, base
     success_ratio = cum_suc_count / cum_cnt
     print('colored in {}'.format(run_time))
     print('success ratio {:.4f}'.format(success_ratio))
-    #print(model_path)
 
-    #将图片保存
+
 
     save_graph_or_not = False
     if save_graph_or_not:
@@ -135,7 +129,7 @@ def envaluate_RL(data_dir,num_color,max_num_nodes, device, training_device, base
         os.makedirs(suc_dir, exist_ok=True)
         os.makedirs(unsuc_dir, exist_ok=True)
         for case in range(num_eval_graphs):
-            if (np.max(exact_sol_list[0],axis = 1) == num_color)[case]:#成功案例
+            if (np.max(exact_sol_list[0],axis = 1) == num_color)[case]:
                 plot_save_path = os.path.join(suc_dir, "{:06d}.jpg".format(case))
             else:
                 plot_save_path = os.path.join(unsuc_dir, "{:06d}.jpg".format(case))
@@ -145,7 +139,5 @@ def envaluate_RL(data_dir,num_color,max_num_nodes, device, training_device, base
             plt.savefig(plot_save_path)
             plt.close('all')
 
-    # np.save(os.path.join(data_dir,"success_or_not.npy"),np.max(exact_sol_list[0],axis = 1))
-    # np.save(os.path.join(data_dir,"exact_sol_list.npy"),exact_sol_list[0])
 
     return cum_suc_count , cum_cnt, run_time

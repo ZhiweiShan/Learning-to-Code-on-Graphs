@@ -1,14 +1,6 @@
 import torch
 import dgl
-from collections import namedtuple
 import dgl.function as fn
-import networkx as nx
-import numpy as np
-from copy import deepcopy as dc
-import random
-import time
-from time import time
-from torch.utils.data import DataLoader
 
 
 class MaximumIndependentSetEnv(object):
@@ -36,29 +28,28 @@ class MaximumIndependentSetEnv(object):
         return ob, reward, done, info, in_color_reward
 
     def _take_action(self, action):
-        undecided = self.x == 0  # 找到defered 索引
-        self.x[undecided] = action[undecided]  # 将defered node更新
+        undecided = self.x == 0
+        self.x[undecided] = action[undecided]
         self.t += 1
-        #        rg = self.g.reverse(share_ndata=True, share_edata=True).to(self.device)
-        for i in range(1, self.num_color + 1):  # 对每一种color：
-            x1 = (self.x == i)  # 标记是否为该种颜色 (True or False)
+        for i in range(1, self.num_color + 1):
+            x1 = (self.x == i)
             self.g = self.g.to(self.device)
-            self.g.ndata['h'] = x1.float()  # False -> 0, True -> 1
+            self.g.ndata['h'] = x1.float()
             self.g.update_all(
                 fn.copy_src(src='h', out='m'),
                 fn.sum(msg='m', out='h')
             )
-            # 通过消息传递求degree
-            x1_deg = self.g.ndata.pop('h')  # 将ndata存进x1_deg并删除'h'
 
-            # 找出冲突的点
+            x1_deg = self.g.ndata.pop('h')
+
+
             clashed = x1 & (x1_deg > 0)
-            self.x[clashed] = 0  # 将冲突的node打回0
+            self.x[clashed] = 0
 
         # fill timeout with zeros
         still_undecided = (self.x == 0)
         timeout = (self.t == self.max_epi_t)
-        self.x[still_undecided & timeout] = self.num_color + 1  # 超时的多加一个颜色
+        self.x[still_undecided & timeout] = self.num_color + 1
 
         done = self._check_done()
         self.epi_t[~done] += 1
@@ -66,8 +57,8 @@ class MaximumIndependentSetEnv(object):
         # compute reward and solution
         x_not_0 = (self.x != 0).float()
         x_not_new_color = (self.x != self.num_color + 1).float()
-        x_colored = (x_not_0 + x_not_new_color == 2).float()  # 即不是0，也不是新color时给一个reward
-        # x_colored = x_not_0
+        x_colored = (x_not_0 + x_not_new_color == 2).float()
+
         h = x_colored
         self.g.ndata['h'] = h
         next_sol = dgl.sum_nodes(self.g, 'h')

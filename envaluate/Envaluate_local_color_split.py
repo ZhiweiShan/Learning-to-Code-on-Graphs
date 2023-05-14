@@ -69,7 +69,6 @@ def envaluate_RL_local_same_model(data_dir,num_color,max_num_nodes, device, trai
             pin_memory=True
         )
     }
-    # construct actor critic network
     actor_critic = ActorCritic(
         actor_class=PolicyGraphConvNet,
         critic_class=ValueGraphConvNet,
@@ -81,14 +80,10 @@ def envaluate_RL_local_same_model(data_dir,num_color,max_num_nodes, device, trai
     )
     model_save_dir = os.path.join(base_model_save_dir, str(num_color))
     model_path = os.path.join(model_save_dir, "saved_model")
-    # if training_device == device:
-    #     actor_critic.load_state_dict(torch.load(model_path))
-    # else:
+
     actor_critic.load_state_dict(torch.load(model_path, map_location={'{}'.format(training_device):'{}'.format(device)}))
     actor_critic.to(device)
-    # construct PPO framework
 
-    # construct environment
 
     env = env_local_color.MaximumIndependentSetEnv(
         max_epi_t=max_epi_t,

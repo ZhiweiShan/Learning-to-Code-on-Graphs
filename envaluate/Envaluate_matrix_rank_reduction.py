@@ -17,10 +17,9 @@ import matplotlib.colors as colors
 import matplotlib.cm as cmx
 
 def envaluate_RL_local_same_model(data_dir,num_color,max_num_nodes, device, training_device, base_model_save_dir, save_graph, space_dim
-                                  ,data_dir_topo = None):
+                                  ):
     device = torch.device(device)
     training_device = torch.device(training_device)
-    #15150.30.3  20200.250.25  25250.20.2   30300.150.15  30300202  biparHH_202070.2
     #
 
     print('model:',base_model_save_dir)
@@ -76,14 +75,10 @@ def envaluate_RL_local_same_model(data_dir,num_color,max_num_nodes, device, trai
     )
     model_save_dir = os.path.join(base_model_save_dir, str(num_color))
     model_path = os.path.join(model_save_dir, "saved_model")
-    # if training_device == device:
-    #     actor_critic.load_state_dict(torch.load(model_path))
-    # else:
+
     actor_critic.load_state_dict(torch.load(model_path, map_location={'{}'.format(training_device):'{}'.format(device)}))
     actor_critic.to(device)
-    # construct PPO framework
 
-    # construct environment
 
     env = env_local_color_subspace.MaximumIndependentSetEnv(
         max_epi_t=max_epi_t,
@@ -144,10 +139,6 @@ def envaluate_RL_local_same_model(data_dir,num_color,max_num_nodes, device, trai
     success_ratio = cum_success_color_count / cum_cnt
 
     print('success ratio {:.4f}'.format(success_ratio))
-    #print(exact_sol_list)
-    #print(model_path)
-
-    #将图片保存
 
     save_graph_or_not = save_graph
     save_unsecc = False
@@ -183,7 +174,6 @@ def envaluate_RL_local_same_model(data_dir,num_color,max_num_nodes, device, trai
                 else:
                     continue
             read_dir = os.path.join(data_dir,"{:06d}.txt".format(case))
-            #g = load_graphs(read_dir)[0][0]
             g = dgl.from_networkx(nx.relabel.convert_node_labels_to_integers(read_edgelist(read_dir, create_using=nx.DiGraph),
                                                                          first_label=0))
             g.add_nodes(max_num_nodes - g.number_of_nodes())
@@ -198,48 +188,15 @@ def envaluate_RL_local_same_model(data_dir,num_color,max_num_nodes, device, trai
             for label in ColorLegend:
                 ax.plot([0], [0], color=scalarMap.to_rgba(ColorLegend[label]), label=label)
 
-            # Just fixed the color map
             nx.draw_networkx(g.to_networkx(), pos, cmap=jet, vmin=0, vmax=max(exact_sol_list[case]),
                              node_color=exact_sol_list[case], with_labels=True, ax=ax)
 
-            # Setting it to how it was looking before.
             plt.axis('off')
             f.set_facecolor('w')
-
             plt.legend()
-
             f.tight_layout()
-            #plt.show()
-                # nx.draw_networkx(g.to_networkx(), pos=nx.circular_layout(g.to_networkx()), with_labels=True,
-                #                  font_weight='bold', node_color=exact_sol_list[case])
             plt.savefig(plot_save_path,dpi=300)
             plt.close('all')
 
-        # #save the topology graph
-        # suc_dir_topo = os.path.join(data_dir_topo_save,"clean{}".format(clean2), "success")
-        # unsuc_dir_topo = os.path.join(data_dir_topo_save,"clean{}".format(clean2), "unsuccess")
-        # if os.path.exists(suc_dir_topo):
-        #     shutil.rmtree(suc_dir_topo)
-        # if os.path.exists(unsuc_dir_topo):
-        #     shutil.rmtree(unsuc_dir_topo)
-        # os.makedirs(suc_dir_topo, exist_ok=True)
-        # os.makedirs(unsuc_dir_topo, exist_ok=True)
-        # for case in range(num_eval_graphs):
-        #     if succ_local_colored_list[case] == 1:#succ_local_colored
-        #         plot_save_path = os.path.join(suc_dir_topo, "{:06d}.jpg".format(index[case]))
-        #     else:
-        #         plot_save_path = os.path.join(unsuc_dir_topo, "{:06d}.jpg".format(index[case]))
-        #     read_dir = os.path.join(data_dir_topo_load,"{:06d}.txt".format(index[case]))
-        #     G = nx.readwrite.edgelist.read_edgelist(read_dir)
-        #     #top = nx.bipartite.sets(G)[0]
-        #     mapping = {x: int(x) for x in G.nodes}
-        #     G = nx.relabel_nodes(G, mapping)
-        #     top = list(range(max_num_nodes))
-        #     pos = nx.bipartite_layout(G, top)
-        #     nx.draw_networkx(G, pos=pos, with_labels=True, font_weight='bold')
-        #     plt.savefig(plot_save_path)
-        #     plt.close('all')
-    # np.save(os.path.join(data_dir,"success_or_not.npy"),np.max(exact_sol_list[0],axis = 1))
-    # np.save(os.path.join(data_dir,"exact_sol_list.npy"),exact_sol_list[0])
 
     return cum_success_color_count, cum_cnt, run_time

@@ -106,16 +106,10 @@ class PolicyGraphConvNet(nn.Module):
             GraphConv(hidden_dim, output_dim, activation=None)
             )
 
-        # with torch.no_grad():
-        #     self.layers[-1].bias[2].add_(3.0)
-        
+
     def forward(self, h, g, mask = None):
         for i, layer in enumerate(self.layers):
-            if i % 2 ==1:
-                #h = layer(h, g.reverse(copy_ndata=True, copy_edata=True), mask = mask)
-                h = layer(h, g, mask=mask)
-            else:
-                h = layer(h, g, mask=mask)
+            h = layer(h, g, mask=mask)
 
         return h
 
@@ -142,10 +136,6 @@ class ValueGraphConvNet(nn.Module):
             
     def forward(self, h, g, mask = None):
         for i, layer in enumerate(self.layers):
-            if i % 2 ==1:
-                #h = layer(h, g.reverse(copy_ndata=True, copy_edata=True), mask = mask)
-                h = layer(h, g, mask=mask)
-            else:
-                h = layer(h, g, mask=mask)
+            h = layer(h, g, mask=mask)
 
         return h

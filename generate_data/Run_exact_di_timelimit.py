@@ -20,7 +20,6 @@ def run_cmd(cmd_string, timeout=5):
             code = 0
             msg = str(msg.decode(format))
     except subprocess.TimeoutExpired:
-        # 注意：不能使用p.kill和p.terminate，无法杀干净所有的子进程，需要使用os.killpg
         p.kill()
         p.terminate()
         os.killpg(p.pid, signal.SIGUSR1)
