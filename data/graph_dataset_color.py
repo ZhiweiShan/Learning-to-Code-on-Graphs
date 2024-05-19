@@ -3,6 +3,7 @@ import random
 import math
 import networkx as nx
 import dgl
+import torch
 from dgl import DGLGraph
 from torch.utils.data import Dataset
 import re
@@ -86,14 +87,20 @@ class GraphDataset(Dataset):
                     self.data_dir,
                     "{:06d}.txt".format(self.index[idx])
                 )
+                feature = {'filename': self.index[idx] * torch.ones((self.num_nodes, 1))}
             else:
                 g_path = os.path.join(
                     self.data_dir,
                     "{:06d}.txt".format(idx)
                 )
+                feature = {'filename': idx * torch.ones((self.num_nodes, 1))}
 
             g = dgl.from_networkx(nx.relabel.convert_node_labels_to_integers(read_edgelist(g_path,create_using=nx.DiGraph),first_label=0))
-            g.add_nodes(self.num_nodes - g.number_of_nodes())
+            try:
+                g.add_nodes(self.num_nodes - g.number_of_nodes())
+            except:
+                raise ValueError('need to increase the number of nodes')
+            g.ndata.update(feature)
         else:
             g = self.generate_fn()
 

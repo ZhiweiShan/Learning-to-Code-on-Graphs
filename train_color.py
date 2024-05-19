@@ -6,6 +6,7 @@ from torch.utils.data import DataLoader
 import dgl
 from ppo.framework import ProxPolicyOptimFramework
 from ppo.actor_critic import ActorCritic
+
 from ppo.graph_net import PolicyGraphConvNet, ValueGraphConvNet
 from ppo.storage_gpu import RolloutStorage
 from data.graph_dataset_color import get_dataset
@@ -65,7 +66,7 @@ hidden_dim = 128
 init_lr = 1e-3
 max_epi_t = 64
 max_rollout_t = max_epi_t
-max_update_t = 200
+max_update_t = 10000
 
 # ppo
 gamma = 1.0
@@ -76,7 +77,8 @@ reg_coef = 0.1
 max_grad_norm = 0.5
 
 # logging
-log_freq = 2
+log_freq = 10
+
 
 
 # main
@@ -88,27 +90,10 @@ anneal_base = 0.
 train_num_samples = 2
 eval_num_samples = 10
 
-
 # initial values
 best_vali_sol = -1e5
 
-# generate and save datasets
-num_eval_graphs = 1 #100
 
-# Vali ER random graph parameter:
-num_nodes_er = 20
-p = 0.1
-#Vali Geometric graph
-num_nodes_geo = 10
-radius = 0.4
-p_geo_both_directed = 0.2
-#Vali bipartite graph
-num_nodes_left = 20
-num_nodes_right = 20
-p_bi = 0.2
-q = 0.1
-#
-k = 1
 
 mode="vali"
 
@@ -259,7 +244,7 @@ for update_t in range(max_update_t):
     if (update_t + 1) % log_freq == 0:
         print("update_t: {:05d}".format(update_t + 1))
         print("train stats...{}-color".format(num_color))
-        print("sol: {:.4f} ".format(avg_sol))
+        print("average colored nodes: {:.4f} ".format(avg_sol))
 list_index += 1
 model_save_dir = os.path.join(base_model_save_dir, str(num_color))
 os.makedirs(model_save_dir, exist_ok=True)

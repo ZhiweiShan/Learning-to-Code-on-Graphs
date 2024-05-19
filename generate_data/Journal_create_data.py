@@ -5,7 +5,7 @@ import dgl
 import math
 from tqdm import tqdm
 from generate_data.helper_topology2conflict import generate_havel_hakimi_graph, shuffle, t2c_directed, t2c_undirected, generate_random_bigraph, add_interference
-from generate_data import generate_matlab
+from generate_data import Matlab
 
 def generate_directed_er_graph(n, p, directed=True):
     G = dgl.DGLGraph()

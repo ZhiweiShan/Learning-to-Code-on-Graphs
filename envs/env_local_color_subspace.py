@@ -3,14 +3,14 @@ import dgl
 import dgl.function as fn
 import numpy as np
 from numpy.linalg import matrix_rank as rk
+import itertools
 
 
 class MaximumIndependentSetEnv(object):
     def __init__(
         self, 
         max_epi_t, 
-        max_num_nodes, 
-        hamming_reward_coef, 
+        max_num_nodes,
         device,
         num_color,
         local_give_up_coef,
@@ -18,7 +18,6 @@ class MaximumIndependentSetEnv(object):
         ):
         self.max_epi_t = max_epi_t
         self.max_num_nodes = max_num_nodes
-        self.hamming_reward_coef = hamming_reward_coef
         self.device = device
         self.num_color = num_color
         self.local_give_up_coef = local_give_up_coef
@@ -189,10 +188,19 @@ class MaximumIndependentSetEnv(object):
             num_samples,
             device=self.device
         )
-        self.vecs = torch.zeros(2 ** self.space_dim, self.space_dim, device=self.device)
-        for i in range(2 ** self.space_dim):
-            bin_str = format(i, f'0{self.space_dim}b')
-            vec = torch.tensor([int(b) for b in bin_str])
-            self.vecs[i] = vec
-
+        self.vecs = torch.zeros(self.num_color+1, self.space_dim, device=self.device)
+        # for i in range(self.num_color+1):
+        #     bin_str = format(i, f'0{self.space_dim}b')
+        #     vec = torch.tensor([int(b) for b in bin_str])
+        #     self.vecs[i] = vec
+        idx = 0
+        for num_ones in range(self.space_dim + 1):
+            permutations = list(itertools.combinations(range(self.space_dim), num_ones))
+            for perm in permutations:
+                if idx > self.num_color:
+                    break
+                vec = torch.zeros(self.space_dim)
+                vec[list(perm)] = 1
+                self.vecs[idx] = vec
+                idx += 1
         return ob

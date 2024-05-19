@@ -14,9 +14,9 @@ import matplotlib.pyplot as plt
 import time
 
 
-def envaluate_RL(data_dir,num_color,max_num_nodes, device, training_device, base_model_save_dir):
+def envaluate_RL(data_dir,num_color,max_num_nodes, device, base_model_save_dir):
     device = torch.device(device)
-    training_device = torch.device(training_device)
+
 
 
     print('model:',base_model_save_dir)
@@ -71,7 +71,7 @@ def envaluate_RL(data_dir,num_color,max_num_nodes, device, training_device, base
     model_save_dir = os.path.join(base_model_save_dir, str(num_color))
     model_path = os.path.join(model_save_dir, "saved_model")
 
-    actor_critic.load_state_dict(torch.load(model_path, map_location={'{}'.format(training_device):'{}'.format(device)}))
+    actor_critic.load_state_dict(torch.load(model_path, map_location=device))
     actor_critic.to(device)
 
 

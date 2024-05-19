@@ -2,15 +2,11 @@ import subprocess
 import concurrent.futures
 import os
 MAIS = 'Journal/MAIS.py'
-OTHGN = 'Journal/Journal_Run_exact.py'
+OTHGN = 'Journal/Journal_Run_TDMA.py'
 OSIA = "Journal/Journal_Run_OSIA.py"
 OVIA = 'Journal/Journal_Run_OVIA.py'
 SSIA = 'Journal/Journal_Run_SSIA.py'
 SVIA = 'Journal/Journal_Run_SVIA.py'
-current_path = os.getcwd()
-
-# 打印当前工作目录
-print("当前工作目录是:", current_path)
 # num_nodes
 args = ['data/new_data_di_ER_6_0.4_1000_test_chromatic','6']
 

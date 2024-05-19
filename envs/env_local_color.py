@@ -23,12 +23,12 @@ class MaximumIndependentSetEnv(object):
         
     def step(self, action):
         reward, sol, done, max_num_in_color = self._take_action(action)
-        
+        max_local_color = max_num_in_color + 1
         ob = self._build_ob()
         self.sol = sol
         info = {"sol": self.sol}
 
-        return ob, reward, done, info, max_num_in_color
+        return ob, reward, done, info, max_local_color
 
 
 
