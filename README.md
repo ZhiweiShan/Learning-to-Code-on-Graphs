@@ -86,7 +86,7 @@ python Envaluate/Run_Envaluate_fractional_local_color.py
 python Envaluate/Run_Envaluate_matrix_rank_reduction.py
 ```
 
-# Update for journal version:
+# Update for journal version
 run the following command:
 ```
 python Journal_compaire.py
