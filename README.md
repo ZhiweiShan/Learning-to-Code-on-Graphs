@@ -1,7 +1,3 @@
-
-
-
-
 # Learning-to-Code-on-Graphs
 Official codes for the paper "Learning to Code on Graphs for Topological Interference Management".
 
@@ -103,4 +99,12 @@ Journal/Journal_load_result
 ```
 to compaire the achieved DoF obtained by different method
 
+# Dataset Details
+We train on graphs randomly generated based on variant specific parameters. 50,000 graphs were generated and separated according to the chromatic number for training, and 5,000 graphs for evaluation. The specific parameters for random graphs are shown in tables below. q represents the percent of randomly choosing demanded messages.
+    
+For Wireless Net, we randomly distribute transmitters and receivers within a square area of 1,000 m * 1,000 m.  The simulated channel follows the LoS model in ITU-1411. The carrier frequency is 2.4 GHz, antenna height is 1.5 m, and the antenna gain per device is -2.5 dB. The noise power spectral density is -174 dBm/Hz, and the noise figure is 7 dB. Each pair of transmitter and receiver is uniformly spaced within [2, 65] meters. Each link is expected to operate over a 10 MHz spectrum and the maximum transmit power is 30 dBm. 
+
+![2024-05-20_23-45](https://github.com/ZhiweiShan/Learning-to-Code-on-Graphs/assets/74201033/9d7a4bf0-22cf-4727-83c2-e6e5a5992177)
+
+![2024-05-20_23-46](https://github.com/ZhiweiShan/Learning-to-Code-on-Graphs/assets/74201033/69202331-e278-45ab-94b2-b6305998b35a)
 
