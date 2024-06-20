@@ -51,7 +51,7 @@ python train_color.py
 ```
 Several parameters need to be seted. An example is:
 ```
-python train_color.py --data-dir=data/data_di_bipar_20200.20.2_1000/undirected/chromaticed/5 --model-save-dir=model_save --device=0 --num-color=5 --num-nodes=20
+python train_color.py --data-dir=data/data_di_bipar_20200.20.2_1000_train/undirected/chromaticed/5 --model-save-dir=model_save --device=0 --num-color=5 --num-nodes=20
 ```
 Note that ‘num-nodes‘ only needs to be greater or equal to the number of nodes of the graph with the maximum number of nodes in the dataset.
 
